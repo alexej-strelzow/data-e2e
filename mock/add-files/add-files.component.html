@@ -1,0 +1,359 @@
+<ui-page>
+  <ui-title>Samples</ui-title>
+  <ui-actions>
+    <input
+      hidden
+      #uploader
+      onclick="this.value = null"
+      accept=".fastq, .vcf, .gz"
+      id="select-file"
+      type="file"
+      multiple
+      (change)="addFiles($event)"
+    />
+
+    <button
+      mat-raised-button
+      color="primary"
+      data-test-browse-local
+      [disabled]="!isFormValid()"
+      class="m-r"
+      (click)="onLocalFile($event, uploader)"
+    >
+      Browse Local
+      <!-- TODO: extract this to ui-kit if proposal is accepted -->
+      <!--
+      <clr-dropdown [clrCloseMenuOnItemClick]="false">
+        <button clrDropdownTrigger aria-label="Dropdown demo button">
+          <ui-icon class="more-btn" icon="caret down" size="16"></ui-icon>
+        </button>
+        <clr-dropdown-menu *clrIfOpen>
+          <div disabled aria-label="Dropdown header Action 1" clrDropdownItem>
+            <ui-icon icon="cloud-network"></ui-icon> Browser Remote
+          </div>
+          <div disabled aria-label="Dropdown header Action 1" clrDropdownItem>
+            <ui-icon icon="link"></ui-icon> FTP
+          </div>
+          <div disabled aria-label="Dropdown header Action 1" clrDropdownItem>
+            <ui-icon icon="link"></ui-icon> HTTPS
+          </div>
+        </clr-dropdown-menu>
+      </clr-dropdown>
+      -->
+    </button>
+
+    <button
+      mat-raised-button
+      color="primary"
+      [disabled]="!uploadEnabled()"
+      data-test-upload
+      (click)="uploadFiles()"
+    >
+      Upload & Start Analysis
+    </button>
+  </ui-actions>
+
+  <ui-content>
+    <div fxLayout="row" fxLayoutAlign="center center">
+      <div fxFlex [formGroup]="form" class="upload-batch-container">
+        <mat-form-field appearance="standard" class="m-r">
+          <mat-label>Upload Batch</mat-label>
+          <input
+            [errorStateMatcher]="matcher"
+            required
+            formControlName="uploadBatch"
+            matInput
+          />
+        </mat-form-field>
+
+        <mat-form-field class="m-r">
+          <mat-label>Assay</mat-label>
+          <mat-select
+            [errorStateMatcher]="matcher"
+            required
+            formControlName="assays"
+          >
+            <mat-option [value]="o.id" *ngFor="let o of assays$ | async">{{
+              o.name
+            }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="m-r">
+          <mat-label>Sequencer</mat-label>
+          <mat-select
+            [errorStateMatcher]="matcher"
+            required
+            formControlName="sequencers"
+          >
+            <mat-option>-</mat-option>
+            <mat-optgroup
+              *ngFor="let s of sequencers$ | async"
+              [label]="s.manufacturer"
+            >
+              <mat-option
+                *ngFor="let sequencers of s.sequencers"
+                [value]="sequencers.id"
+              >
+                {{ sequencers.name }}
+              </mat-option>
+            </mat-optgroup>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="standard" class="m-r">
+          <mat-label>Seq. run</mat-label>
+          <input
+            [errorStateMatcher]="matcher"
+            required
+            formControlName="sequence_run"
+            matInput
+          />
+        </mat-form-field>
+
+        <mat-form-field class="m-r">
+          <mat-label>Seq. date</mat-label>
+          <input
+            matInput
+            required
+            [errorStateMatcher]="matcher"
+            [matDatepicker]="headerDatepicker"
+            formControlName="sequence_date"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="headerDatepicker"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #headerDatepicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field floatLabel="never">
+          <mat-label>Biosample Type</mat-label>
+          <mat-select
+            [errorStateMatcher]="matcher"
+            required
+            formControlName="bioSampleType"
+          >
+            <mat-option [value]="o.id" *ngFor="let o of biosamples$ | async">{{
+              o.name
+            }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div>
+        <mat-form-field>
+          <mat-label>Bulk Actions</mat-label>
+          <mat-select [formControl]="bulkAction">
+            <mat-option [value]="BulkAction.All"
+              >Apply to all fields</mat-option
+            >
+            <mat-option [value]="BulkAction.ToEmpty"
+              >Apply only to empty fields</mat-option
+            >
+            <mat-option [value]="BulkAction.ToAssay"
+              >Apply to assay column</mat-option
+            >
+            <mat-option [value]="BulkAction.ToSequencer"
+              >Apply to sequencer column</mat-option
+            >
+            <mat-option [value]="BulkAction.ToSequencerRun"
+              >Apply to seq. run column</mat-option
+            >
+            <mat-option [value]="BulkAction.ToSequenceDate"
+              >Apply to seq. date</mat-option
+            >
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <table
+      mat-table
+      [dataSource]="dataSource"
+      matSort
+      class="add-files-table full-width p-t"
+    >
+      <ng-container matColumnDef="assay">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>assay</th>
+        <td mat-cell *matCellDef="let element">
+          <mat-form-field>
+            <mat-select
+              [errorStateMatcher]="matcher"
+              required
+              [(ngModel)]="element.assay"
+            >
+              <mat-option [value]="o.id" *ngFor="let o of assays$ | async">{{
+                o.name
+              }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="individual">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>individual</th>
+        <td mat-cell *matCellDef="let element">
+          <mat-form-field appearance="standard" floatLabel="never">
+            <input
+              placeholder="Individual"
+              [errorStateMatcher]="matcher"
+              required
+              [(ngModel)]="element.individual"
+              matInput
+            />
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="biosample_type">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="bioSampleType">
+          biosample type
+        </th>
+        <td mat-cell *matCellDef="let element">
+          <mat-form-field floatLabel="never">
+            <mat-select
+              placeholder="Biosample Type"
+              [errorStateMatcher]="matcher"
+              required
+              [(ngModel)]="element.bioSampleType"
+            >
+              <mat-option
+                [value]="o.id"
+                *ngFor="let o of biosamples$ | async"
+                >{{ o.name }}</mat-option
+              >
+            </mat-select>
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="biosample">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="bioSample">
+          biosample
+        </th>
+        <td mat-cell *matCellDef="let element">
+          <mat-form-field appearance="standard" floatLabel="never">
+            <input
+              placeholder="Biosample"
+              [errorStateMatcher]="matcher"
+              required
+              [(ngModel)]="element.bioSample"
+              matInput
+            />
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="sequencer">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="sequencer">
+          sequencer
+        </th>
+        <td mat-cell *matCellDef="let element">
+          <mat-form-field>
+            <mat-select required [(ngModel)]="element.sequencer">
+              <mat-option>-</mat-option>
+              <mat-optgroup
+                *ngFor="let s of sequencers$ | async"
+                [label]="s.manufacturer"
+              >
+                <mat-option
+                  *ngFor="let sequencers of s.sequencers"
+                  [value]="sequencers.id"
+                >
+                  {{ sequencers.name }}
+                </mat-option>
+              </mat-optgroup>
+            </mat-select>
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="sequence_run">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="sequenceRunId">
+          sequence run
+        </th>
+        <td mat-cell *matCellDef="let element">
+          <mat-form-field appearance="standard" floatLabel="never" class="m-r">
+            <input
+              placeholder="Sequence Run"
+              [errorStateMatcher]="matcher"
+              required
+              [(ngModel)]="element.sequenceRunId"
+              matInput
+            />
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="sequence_date">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="date">
+          sequence date
+        </th>
+        <td mat-cell *matCellDef="let element">
+          <mat-form-field floatLabel="never">
+            <input
+              matInput
+              required
+              placeholder="Date"
+              [errorStateMatcher]="matcher"
+              [matDatepicker]="tableDatepicker"
+              [(ngModel)]="element.date"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="tableDatepicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #tableDatepicker></mat-datepicker>
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="lane">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="lane">lane</th>
+        <td mat-cell *matCellDef="let element">
+          <mat-form-field appearance="standard" floatLabel="never" class="m-r">
+            <input
+              placeholder="Lane"
+              [errorStateMatcher]="matcher"
+              required
+              [(ngModel)]="element.lane"
+              matInput
+            />
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="size">
+        <th mat-header-cell *matHeaderCellDef>size</th>
+        <td mat-cell *matCellDef="let element">
+          <div class="table-file-size" *ngFor="let file of element.files">
+            {{ file.sizeInBytes | bytesToString }}
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="filenames">
+        <th mat-header-cell *matHeaderCellDef>filenames</th>
+        <td mat-cell *matCellDef="let element">
+          <div class="filename" *ngFor="let file of element.files">
+            {{ file.fullName }}
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>actions</th>
+        <td mat-cell *matCellDef="let element">
+          <ui-icon
+            class="delete-icon clickable"
+            (click)="delete(element)"
+            icon="times"
+          ></ui-icon>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </ui-content>
+</ui-page>
