@@ -12,7 +12,8 @@ import {COLLISION_SUFFIX, DATA_E2E} from "../constants";
  * @param buttonElements All found button elements
  * @param componentName The name of the Angular component (taken from the file name)
  */
-export const handleButtonElements = (buttonElements: HTMLElement[], componentName: string) => {
+export const handleButtonElements = (buttonElements: HTMLElement[], componentName: string) : Map<number, string> => {
+    const result: Map<number, string> = new Map();
     const e2eAttrMap: any = {};
 
     const getWhatItIs = (button: HTMLElement) => {
@@ -22,7 +23,7 @@ export const handleButtonElements = (buttonElements: HTMLElement[], componentNam
         );
     };
 
-    (buttonElements || []).forEach((button: HTMLElement) => {
+    (buttonElements || []).map((button: HTMLElement, index: number) => {
         if (!button.hasAttribute(DATA_E2E)) {
             const whatItIs = getWhatItIs(button);
             let selector = `${componentName}-${whatItIs}-button`;
@@ -33,6 +34,7 @@ export const handleButtonElements = (buttonElements: HTMLElement[], componentNam
 
             button.setAttribute(DATA_E2E, selector);
             e2eAttrMap[selector] = true;
+            result.set(index, selector);
 
             console.log(`[Button] add new selector: ${selector}`);
         } else {
@@ -40,4 +42,6 @@ export const handleButtonElements = (buttonElements: HTMLElement[], componentNam
             e2eAttrMap[attr] = true;
         }
     });
+
+    return result;
 };

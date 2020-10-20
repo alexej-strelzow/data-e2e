@@ -1,0 +1,22 @@
+<input data-e2e="input-individual-input" 
+        placeholder="Individual"
+        [errorStateMatcher]="matcher"
+        required
+        [(ngModel)]="element.individual"
+        matInput
+/>
+
+<!--
+<input
+        placeholder="IgnoreMe"
+        [(ngModel)]="element.ignore"
+        matInput
+/>
+-->
+
+<input data-e2e="input-non-trivial-input" 
+        placeholder="NonTrivial"
+        [(ngModel)]="element.nonTrivial"
+        matInput
+>
+</input>

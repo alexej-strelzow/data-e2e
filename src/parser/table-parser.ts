@@ -12,8 +12,7 @@ import {COLLISION_SUFFIX, DATA_E2E} from "../constants";
  * @param inputElements All found input elements
  * @param componentName The name of the Angular component (taken from the file name)
  */
-export const handleInputElements = (inputElements: HTMLElement[], componentName: string): Map<number, string> => {
-    const result: Map<number, string> = new Map();
+export const handleTableElements = (inputElements: HTMLElement[], componentName: string) => {
     const e2eAttrMap: any = {};
 
     const getWhatItIs = (input: HTMLElement) => {
@@ -24,7 +23,7 @@ export const handleInputElements = (inputElements: HTMLElement[], componentName:
         );
     };
 
-    (inputElements || []).map((input: HTMLElement, index: number) => {
+    (inputElements || []).forEach((input: HTMLElement) => {
         if (!input.hasAttribute(DATA_E2E)) {
             const whatItIs = getWhatItIs(input);
             let selector = `${componentName}-${whatItIs}-input`;
@@ -35,7 +34,6 @@ export const handleInputElements = (inputElements: HTMLElement[], componentName:
 
             input.setAttribute(DATA_E2E, selector);
             e2eAttrMap[selector] = true;
-            result.set(index, selector);
 
             console.log(`[Input] add new selector: ${selector}`);
         } else {
@@ -43,6 +41,4 @@ export const handleInputElements = (inputElements: HTMLElement[], componentName:
             e2eAttrMap[attr] = true;
         }
     });
-
-    return result;
 };
