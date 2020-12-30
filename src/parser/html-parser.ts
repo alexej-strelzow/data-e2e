@@ -7,6 +7,7 @@ import { ParseResult } from './models/parse-result';
 import { handleInputElements } from './elements/input-parser';
 import { handleButtonElements } from './elements/button-parser';
 import { handleAnchorElements } from './elements/anchor-parser';
+import { handleMatSelectElements } from './elements/mat-select-parser';
 
 const processInternally = (fileName: string, src: string, root: HTMLElement): string => {
   const componentName = fileName.substring(fileName.lastIndexOf('/') + 1, fileName.indexOf('.component'));
@@ -14,7 +15,8 @@ const processInternally = (fileName: string, src: string, root: HTMLElement): st
   const executionArray = [
     { element: 'a', fn: () => handleAnchorElements(root.querySelectorAll('a'), componentName) },
     { element: 'button', fn: () => handleButtonElements(root.querySelectorAll('button'), componentName) },
-    { element: 'input', fn: () => handleInputElements(root.querySelectorAll('input'), componentName) }
+    { element: 'input', fn: () => handleInputElements(root.querySelectorAll('input'), componentName) },
+    { element: 'mat-select', fn: () => handleMatSelectElements(root.querySelectorAll('mat-select'), componentName) }
   ];
 
   let workingCopy = src;

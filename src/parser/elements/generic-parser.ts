@@ -35,11 +35,12 @@ export const handleElements = (
       : element.getAttribute(TEST_ID.attributeName);
   };
 
-  (elements || []).map((element: HTMLElement, index: number) => {
+  (elements || []).map((element: HTMLElement) => {
     const attr = getTestIdAttribute(element);
 
     if (!attr) {
       selector = getTestId(element);
+      existing = false;
 
       if (e2eAttrMap.has(selector)) {
         selector = `${selector}-${TEST_ID.collisionSuffix}`;

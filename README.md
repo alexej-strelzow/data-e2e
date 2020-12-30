@@ -10,6 +10,13 @@ You will be asked 2 questions:
 You will be prompted to enter the directory to scan. This path is relative form this project's root.
 E.g. the root is `/data-e2e`, if you enter `mock`, then `/data-e2e/mock` gets scanned.
 
+## CI Integration
+
+Command: `npm run ci -- --dir <directory>`
+
+Params:
+- directory is relative path from current dir (where command gets executed)
+
 ## Configuration
 
 See `constants.ts`:

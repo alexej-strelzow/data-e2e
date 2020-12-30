@@ -25,6 +25,16 @@ const computeCommentRanges = (src: string): [{ begin: number; end: number }] => 
   return commentRanges;
 };
 
+/**
+ * Adds new test-ids to the original source code in provided order.
+ * The algorithm must not add the test-id when:
+ * 1. The element already has one (these are not part of the provided results array)
+ * 2. The element is commented out (since node-html-parser ignores this as well)
+ *
+ * @param element The html element (e.g. button)
+ * @param results The test-ids to add
+ * @param originalSource The original source file
+ */
 export const addTestIds = (element: string, results: ParseResult[], originalSource: string): string => {
   if (results.length === 0) {
     return originalSource;
@@ -38,13 +48,36 @@ export const addTestIds = (element: string, results: ParseResult[], originalSour
   const commentRanges: [{ begin: number; end: number }] = computeCommentRanges(originalSource);
   const isInCommentRange = (idx: number) => commentRanges.some(({ begin, end }) => idx >= begin && idx <= end);
   const getCommentRange = (idx: number) => commentRanges.find(({ begin, end }) => idx >= begin && idx <= end);
+  const hasTestId = (idx: number, element: string) => {
+    const endIndexCandidate1 = newSrc.indexOf('/>', idx);
+    const endIndexCandidate2 = newSrc.indexOf(`</${element}>`, idx);
+    const endIndex =
+      endIndexCandidate1 === -1 && endIndexCandidate2 !== -1
+        ? endIndexCandidate2
+        : endIndexCandidate1 !== -1 && endIndexCandidate2 === -1
+        ? endIndexCandidate1
+        : endIndexCandidate1 < endIndexCandidate2
+        ? endIndexCandidate1
+        : endIndexCandidate2;
+
+    return newSrc.substring(idx, endIndex).includes(TEST_ID.attributeName);
+  };
 
   for (const { selector } of results) {
+    let ownsTestId = false;
     startIdx = newSrc.indexOf(`<${element}`, startIdx);
 
-    while (isInCommentRange(startIdx)) {
-      startIdx = newSrc.indexOf(`<${element}`, getCommentRange(startIdx)?.end);
-    }
+    do {
+      while (isInCommentRange(startIdx)) {
+        startIdx = newSrc.indexOf(`<${element}`, getCommentRange(startIdx)?.end);
+      }
+
+      ownsTestId = hasTestId(startIdx, element);
+
+      if (ownsTestId) {
+        startIdx = newSrc.indexOf(`<${element}`, startIdx + `<${element}`.length);
+      }
+    } while (ownsTestId);
 
     beginPart = newSrc.substr(0, startIdx + `<${element}`.length);
     endPart = newSrc.substr(beginPart.length);
