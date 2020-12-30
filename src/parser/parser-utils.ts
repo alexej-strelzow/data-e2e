@@ -48,9 +48,9 @@ export const addTestIds = (element: string, results: ParseResult[], originalSour
   const commentRanges: [{ begin: number; end: number }] = computeCommentRanges(originalSource);
   const isInCommentRange = (idx: number) => commentRanges.some(({ begin, end }) => idx >= begin && idx <= end);
   const getCommentRange = (idx: number) => commentRanges.find(({ begin, end }) => idx >= begin && idx <= end);
-  const hasTestId = (idx: number, element: string) => {
+  const hasTestId = (idx: number) => {
     const endIndexCandidate1 = newSrc.indexOf('/>', idx);
-    const endIndexCandidate2 = newSrc.indexOf(`</${element}>`, idx);
+    const endIndexCandidate2 = newSrc.indexOf(`>`, idx);
     const endIndex =
       endIndexCandidate1 === -1 && endIndexCandidate2 !== -1
         ? endIndexCandidate2
@@ -72,7 +72,7 @@ export const addTestIds = (element: string, results: ParseResult[], originalSour
         startIdx = newSrc.indexOf(`<${element}`, getCommentRange(startIdx)?.end);
       }
 
-      ownsTestId = hasTestId(startIdx, element);
+      ownsTestId = hasTestId(startIdx);
 
       if (ownsTestId) {
         startIdx = newSrc.indexOf(`<${element}`, startIdx + `<${element}`.length);
