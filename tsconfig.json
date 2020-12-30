@@ -8,16 +8,17 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "downlevelIteration": true,
     "module": "commonjs",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "types": [
-      "node"
+      "node",
+      "@types/jest"
     ]
   },
   "include": [

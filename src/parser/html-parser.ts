@@ -1,68 +1,50 @@
-import {parse} from "node-html-parser";
-import {readFileSync} from "fs";
-import {handleInputElements} from "./input-parser";
-import {handleButtonElements} from "./button-parser";
-import {DATA_E2E} from "../constants";
+import { parse } from 'node-html-parser';
+import HTMLElement from 'node-html-parser/dist/nodes/html';
+import { StatisticsService } from './statistics';
+import { readFile } from '../file-utils';
+import { addTestIds } from './parser-utils';
+import { ParseResult } from './models/parse-result';
+import { handleInputElements } from './elements/input-parser';
+import { handleButtonElements } from './elements/button-parser';
+import { handleAnchorElements } from './elements/anchor-parser';
 
-export const parseHtml = (fileName: string): string => {
-    const componentName = fileName.substring(fileName.lastIndexOf('/') + 1, fileName.indexOf('.component'));
+const processInternally = (fileName: string, src: string, root: HTMLElement): string => {
+  const componentName = fileName.substring(fileName.lastIndexOf('/') + 1, fileName.indexOf('.component'));
 
-    const src = readFileSync(fileName, 'utf-8');
-    const root = parse(src);
+  const executionArray = [
+    { element: 'a', fn: () => handleAnchorElements(root.querySelectorAll('a'), componentName) },
+    { element: 'button', fn: () => handleButtonElements(root.querySelectorAll('button'), componentName) },
+    { element: 'input', fn: () => handleInputElements(root.querySelectorAll('input'), componentName) }
+  ];
 
-    let copy = src;
+  let workingCopy = src;
 
-    copy = addIds('input', handleInputElements(root.querySelectorAll('input'), componentName), copy);
-    copy = addIds('button', handleButtonElements(root.querySelectorAll('button'), componentName), copy);
-    // TODO: add more
+  executionArray.forEach((e: { element: string; fn: () => ParseResult[] }) => {
+    const result: ParseResult[] = e.fn();
+    const newSelectors = result.filter((p: ParseResult) => !p.existing);
 
-    return copy;
+    workingCopy = addTestIds(e.element, newSelectors, workingCopy);
+
+    StatisticsService.getInstance().addStatistic(fileName, e.element, result);
+  });
+
+  return workingCopy;
 };
 
-const addIds = (element: string, ids: Map<number, string>, originalSource: string): string => {
+/**
+ * Reads the given file and parses the content via `node-html-parser`.
+ * The result of the parsing step is an html-tree and we use the returned root node to query for elements,
+ * we would like to check for `test-ids`.
+ * If the elements of interest do not have such a test-id yet, we add it to the original source, as we are
+ * loosing all Angular-specific attributes during the parsing step. Therefore we only use the parsed representation
+ * of the html file to conveniently detect and if necessary compute `test-ids`.
+ * And in a second step we add them to the respective elements in the original source code.
+ *
+ * @param fileName The html file to process
+ */
+export const processHtml = (fileName: string): string => {
+  const src = readFile(fileName);
+  const root: HTMLElement = parse(src);
 
-    let newSrc = originalSource;
-    let startIdx = 0;
-    let beginPart;
-    let endPart;
-
-    const commentRanges: [{begin: number, end: number}] = computeCommentRanges(originalSource);
-    const isInCommentRange = (idx: number) => commentRanges.some(({begin, end}) => idx >= begin && idx <= end);
-    const getCommentRange = (idx: number) => commentRanges.find(({begin, end}) => idx >= begin && idx <= end);
-
-    for (const selector of ids.values()) {
-        startIdx = newSrc.indexOf(`<${element}`, startIdx);
-
-        while(isInCommentRange(startIdx)) {
-            startIdx = newSrc.indexOf(`<${element}`, getCommentRange(startIdx)?.end);
-        }
-
-        beginPart = newSrc.substr(0, startIdx + `<${element}`.length);
-        endPart = newSrc.substr(beginPart.length);
-
-        newSrc = `${beginPart} ${DATA_E2E}="${selector}" ${endPart}`;
-
-        startIdx = beginPart.length;
-    }
-
-    return newSrc;
-};
-
-const computeCommentRanges = (src: string): [{begin: number, end: number}] => {
-    const COMMENT_REGEX = /(?=<!--)([\s\S]*?)-->/gm;
-    const commentZone: number[] = [];
-    const commentRanges: [{begin: number, end: number}] = [] as any;
-
-    for (const match of src.matchAll(COMMENT_REGEX)) {
-        commentZone.push(match.index || 0);
-        commentZone.push((match.index || 0) + match[0].length);
-    }
-
-    while (commentZone.length !== 0) {
-        let begin = commentZone.shift() || 0;
-        let end = commentZone.shift() || 0;
-        commentRanges.push({begin, end});
-    }
-
-    return commentRanges;
+  return processInternally(fileName, src, root);
 };
