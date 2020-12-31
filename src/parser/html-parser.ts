@@ -2,21 +2,27 @@ import { parse } from 'node-html-parser';
 import HTMLElement from 'node-html-parser/dist/nodes/html';
 import { StatisticsService } from './statistics';
 import { readFile } from '../file-utils';
-import { addTestIds } from './parser-utils';
+import { addTestIds } from './utils/parser-utils';
 import { ParseResult } from './models/parse-result';
 import { handleInputElements } from './elements/input-parser';
 import { handleButtonElements } from './elements/button-parser';
 import { handleAnchorElements } from './elements/anchor-parser';
-import { handleMatSelectElements } from './elements/mat-select-parser';
+
+// eslint-disable-next-line
+enum Element {
+  ANCHOR = 'a',
+  BUTTON = 'button',
+  INPUT = 'input'
+}
 
 const processInternally = (fileName: string, src: string, root: HTMLElement): string => {
   const componentName = fileName.substring(fileName.lastIndexOf('/') + 1, fileName.indexOf('.component'));
 
   const executionArray = [
-    { element: 'a', fn: () => handleAnchorElements(root.querySelectorAll('a'), componentName) },
-    { element: 'button', fn: () => handleButtonElements(root.querySelectorAll('button'), componentName) },
-    { element: 'input', fn: () => handleInputElements(root.querySelectorAll('input'), componentName) },
-    { element: 'mat-select', fn: () => handleMatSelectElements(root.querySelectorAll('mat-select'), componentName) }
+    { element: Element.ANCHOR, fn: () => handleAnchorElements(root.querySelectorAll(Element.ANCHOR), componentName) },
+    { element: Element.BUTTON, fn: () => handleButtonElements(root.querySelectorAll(Element.BUTTON), componentName) },
+    { element: Element.INPUT, fn: () => handleInputElements(root.querySelectorAll(Element.INPUT), componentName) }
+    // add your element-parser here
   ];
 
   let workingCopy = src;

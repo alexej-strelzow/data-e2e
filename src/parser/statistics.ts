@@ -1,14 +1,8 @@
 import { ParseResult } from './models/parse-result';
+import { Summary } from './models/summary';
 
 interface Statistic {
   elementType: string;
-  existingIds: number;
-  newIds: number;
-  totalIds: number;
-  collisions: number;
-}
-
-export interface Summary {
   existingIds: number;
   newIds: number;
   totalIds: number;
@@ -28,13 +22,13 @@ export class StatisticsService {
   }
 
   addStatistic(filename: string, elementType: string, result: ParseResult[]): void {
-    let totalIds = result.length;
+    const totalIds = result.length;
 
     if (totalIds === 0) {
       return;
     }
-    this.existingSelectors = this.existingSelectors.concat(result.filter(r => r.existing).map(r => r.selector));
-    this.allSelectors = this.allSelectors.concat(result.map(r => r.selector));
+    this.existingSelectors = this.existingSelectors.concat(result.filter(r => r.existing).map(r => r.testId));
+    this.allSelectors = this.allSelectors.concat(result.map(r => r.testId));
 
     const statistics = this.statistics.get(filename);
 
@@ -74,13 +68,13 @@ export class StatisticsService {
   }
 
   printSummary(): void {
-    const toFixedWith = (val: number = 0) => ('' + val).padStart(6, ' ');
+    const toFixedWith = (val: number = 0) => `${val}`.padStart(6, ' ');
     const toPercent = (dividend: number = 0, divisor: number = 1) => ((dividend / divisor) * 100).toFixed(0);
     const total = this.getSummary();
 
-    console.log(`SUMMARY - TOTAL`);
+    console.log('SUMMARY - TOTAL');
     console.log(`  Files processed: ${toFixedWith(this.statistics.size)}`);
-    console.log(`  Ids (abs. num.)`);
+    console.log('  Ids (abs. num.)');
     console.log(`    - existing   : ${toFixedWith(total.existingIds)}  (${toPercent(total.existingIds, total.totalIds)}%)`);
     console.log(`    - new        : ${toFixedWith(total.newIds)}  (${toPercent(total.newIds, total.totalIds)}%)`);
     console.log(`    - total      : ${toFixedWith(total.totalIds)}`);

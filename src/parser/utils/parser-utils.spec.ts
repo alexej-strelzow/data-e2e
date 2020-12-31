@@ -1,5 +1,5 @@
 import { getWhatItIs, removeInvalidCharacters, toKebabCase } from './parser-utils';
-import { TestId } from './models/test-id';
+import { TestId } from '../models/test-id';
 
 describe('parser-utils', () => {
   describe('atoms', () => {
@@ -34,7 +34,7 @@ describe('parser-utils', () => {
     });
 
     it('should create the correct test id when test id is an empty attribute', () => {
-      const { TEST_ID } = require('../constants');
+      const { TEST_ID }: { TEST_ID: { attributeName: string } } = require('../../constants');
       const { createTestId } = require('./parser-utils');
       const testId: TestId = { componentName: 'app', whatItIs: 'Add Sample', typeSuffix: 'button' };
 
@@ -47,11 +47,11 @@ describe('parser-utils', () => {
       const { createTestId } = require('./parser-utils');
       const testId: TestId = { componentName: 'app', whatItIs: 'Add Sample', typeSuffix: 'button' };
 
-      expect(createTestId(testId)).toEqual(`add-sample-button`);
+      expect(createTestId(testId)).toEqual('add-sample-button');
     });
 
     it('should not remove the hyphen', () => {
-      const { TEST_ID } = require('../constants');
+      const { TEST_ID }: { TEST_ID: { attributeName: string } } = require('../../constants');
       const { createTestId } = require('./parser-utils');
       const testId: TestId = { componentName: 'app', whatItIs: 'with-hyphen', typeSuffix: 'button' };
 

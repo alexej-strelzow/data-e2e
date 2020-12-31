@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "start": "npx ts-node src/index.ts",
+    "ci": "npx ts-node src/index.ts --ci",
     "test": "jest --watch",
     "######## LINTING & FORMATING ########": "",
     "lint": "eslint src",
@@ -12,7 +13,8 @@
   "private": true,
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "lint-staged",
+      "pre-push": "npx jest --bail"
     }
   },
   "lint-staged": {

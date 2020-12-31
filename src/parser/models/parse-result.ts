@@ -1,5 +1,5 @@
 export interface ParseResult {
   existing: boolean;
-  selector: string;
+  testId: string;
   collision: boolean;
 }

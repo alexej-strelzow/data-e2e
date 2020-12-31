@@ -1,5 +1,5 @@
 import HTMLElement from 'node-html-parser/dist/nodes/html';
-import { createTestId } from '../parser-utils';
+import { createTestId } from '../utils/parser-utils';
 import { ParseResult } from '../models/parse-result';
 import { handleElements } from './generic-parser';
 

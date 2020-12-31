@@ -17,43 +17,43 @@ import { ParseResult } from '../models/parse-result';
  *
  * @param elements All found elements
  * @param componentName The name of the Angular component (taken from the file name)
- * @param getTestId Function that returns the test-id for the HTML element at hand
+ * @param createTestId Function that returns the test-id for the HTML element at hand
  */
 export const handleElements = (
   elements: HTMLElement[],
   componentName: string,
-  getTestId: (element: HTMLElement) => string
+  createTestId: (element: HTMLElement) => string
 ): ParseResult[] => {
   const result: ParseResult[] = [];
   const e2eAttrMap: Map<string, boolean> = new Map();
-  let selector;
-  let existing = false;
+  let testId: string;
+  let existing: boolean;
+  let collision: boolean;
 
-  const getTestIdAttribute = (element: HTMLElement) => {
-    return TEST_ID.empty
+  const getTestIdAttribute = (element: HTMLElement) =>
+    TEST_ID.empty
       ? Object.keys(element.attributes).find((key: string) => key.startsWith(TEST_ID.attributeName))
       : element.getAttribute(TEST_ID.attributeName);
-  };
 
   (elements || []).map((element: HTMLElement) => {
     const attr = getTestIdAttribute(element);
 
     if (!attr) {
-      selector = getTestId(element);
       existing = false;
+      testId = createTestId(element);
 
-      if (e2eAttrMap.has(selector)) {
-        selector = `${selector}-${TEST_ID.collisionSuffix}`;
+      if (e2eAttrMap.has(testId)) {
+        testId = `${testId}-${TEST_ID.collisionSuffix}`;
+        collision = true;
       }
-
-      e2eAttrMap.set(selector, true);
     } else {
       existing = true;
-      selector = attr;
-      e2eAttrMap.set(attr, true);
+      testId = attr;
+      collision = false;
     }
 
-    result.push({ existing, selector, collision: selector.endsWith(`-${TEST_ID.collisionSuffix}`) });
+    e2eAttrMap.set(testId, true);
+    result.push({ existing, testId, collision });
   });
 
   return result;

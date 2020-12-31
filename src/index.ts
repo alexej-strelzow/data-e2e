@@ -1,6 +1,9 @@
 import { getHtmlFiles, writeFile } from './file-utils';
 import { processHtml } from './parser/html-parser';
 import { StatisticsService } from './parser/statistics';
+import { Summary } from './parser/models/summary';
+
+const { ci, dir } = require('minimist')(process.argv.slice(2));
 
 function runInteractiveMode() {
   const prompt = require('prompt');
@@ -26,12 +29,14 @@ function runInteractiveMode() {
         message: 'Directory must be a valid string!',
         required: true
       },
-      /*filter: {
+      /*
+      filter: {
         description: 'Optional: Use a filter to modify only certain files',
         type: 'string',
         message: 'Filter must be a valid string!',
         required: false
-      },*/
+      },
+      */
       dryRun: {
         description: 'Optional: Do a dry run (log changes to console only) [true, false]',
         type: 'boolean',
@@ -60,13 +65,11 @@ function runInteractiveMode() {
   });
 }
 
-const { ci, dir } = require('minimist')(process.argv.slice(2));
-// npm run ci -- --dir ../platox-ui/src/
-if (ci) {
+function runCiMode() {
   const chalk = require('chalk');
 
   if (!dir) {
-    console.error(chalk.red('Directory is missing (e.g. npm run ci -- --dir ../platox-ui/src/)! Exiting with ERROR!'));
+    console.error(chalk.red('Directory is missing (e.g. npm run ci -- --dir ./src/)! Exiting with ERROR!'));
     process.exit(1);
   }
 
@@ -81,7 +84,7 @@ if (ci) {
   htmlFiles.forEach(processHtml);
 
   const statistics = StatisticsService.getInstance();
-  const summary = statistics.getSummary();
+  const summary: Summary = statistics.getSummary();
 
   if (summary.newIds > 0 || summary.collisions > 0) {
     console.error(chalk.red('New IDs or collisions detected! Exiting with ERROR!'));
@@ -96,6 +99,11 @@ if (ci) {
     console.log(chalk.red(JSON.stringify(statistics.getDuplicateSelectors(), null, 2)));
     process.exit(1);
   }
+}
+
+if (ci) {
+  // npm run ci -- --dir ./src/
+  runCiMode();
 } else {
   // for demo purpose enter "mock" when prompted
   runInteractiveMode();
